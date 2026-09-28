@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockPulse AI | Simple Store Demand &amp; Stock Forecasting</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            accent: {
+              500: '#10b981',
+              600: '#059669',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .currency-active {
+      background-color: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .custom-range {
+      accent-color: #2563eb;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Announcement Bar -->
+  <div class="bg-slate-900 text-slate-300 text-xs sm:text-sm py-2 px-4 text-center border-b border-slate-800 flex items-center justify-center gap-2">
+    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+      Simple AI for Shopkeepers
+    </span>
+    <span>No complicated math. Turn spoiled food and empty shelves into profit.</span>
+    <a href="#simulator" class="text-brand-400 hover:text-brand-300 font-semibold underline underline-offset-2 ml-1">Try Shop Calculator &rarr;</a>
+  </div>
+
+  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 flex items-center justify-center shadow-md shadow-brand-500/20 text-white font-bold">
+            <i class="fa-solid fa-boxes-stacked text-lg"></i>
+          </div>
+          <div>
+            <span class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
+              StockPulse <span class="text-brand-600">AI</span>
+            </span>
+            <span class="block text-[10px] uppercase font-bold tracking-widest text-slate-400">Easy Store Forecasting</span>
+          </div>
+        </a>
+
+        <!-- Desktop Links -->
+        <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+          <a href="#real-story" class="hover:text-brand-600 transition">Rahul's Story</a>
+          <a href="#simulator" class="hover:text-brand-600 transition">Shop Simulator</a>
+          <a href="#comparison" class="hover:text-brand-600 transition">Notebook vs AI</a>
+          <a href="#how-it-works" class="hover:text-brand-600 transition">How It Works</a>
+        </div>
+
+        <!-- Currency Switcher + Discovery Button -->
+        <div class="hidden md:flex items-center gap-4">
+          <div class="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 text-xs font-bold text-slate-600">
+            <button id="nav-btn-inr" onclick="setCurrency('INR')" class="px-3 py-1.5 rounded-lg currency-active transition">
+              ₹ INR
+            </button>
+            <button id="nav-btn-usd" onclick="setCurrency('USD')" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 transition">
+              $ USD
+            </button>
+          </div>
+
+          <a href="#discovery" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 transition shadow-sm hover:shadow">
+            Book Free Discovery
+          </a>
+        </div>
+
+        <!-- Mobile Menu Toggle Button -->
+        <div class="flex items-center gap-2 md:hidden">
+          <div class="bg-slate-100 p-1 rounded-lg flex items-center border border-slate-200 text-xs font-bold text-slate-600">
+            <button onclick="setCurrency('INR')" id="mobile-btn-inr" class="px-2 py-1 rounded bg-white text-slate-900 shadow-xs">₹</button>
+            <button onclick="setCurrency('USD')" id="mobile-btn-usd" class="px-2 py-1 rounded text-slate-500">$</button>
+          </div>
+          <button id="mobile-menu-btn" class="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100" aria-label="Toggle Menu">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-b border-slate-200 bg-white px-4 pt-2 pb-6 space-y-3 text-sm font-medium text-slate-700">
+      <a href="#real-story" class="block py-2 hover:text-brand-600">Rahul's Story</a>
+      <a href="#simulator" class="block py-2 hover:text-brand-600">Shop Simulator</a>
+      <a href="#comparison" class="block py-2 hover:text-brand-600">Notebook vs AI</a>
+      <a href="#how-it-works" class="block py-2 hover:text-brand-600">How It Works</a>
+      <a href="#discovery" class="block text-center w-full py-3 bg-brand-600 text-white rounded-xl font-bold mt-2">
+        Book Free Discovery
+      </a>
+    </div>
+  </nav>
+
+  <section class="relative pt-12 pb-16 lg:pt-20 lg:pb-24 bg-gradient-to-b from-white via-blue-50/30 to-slate-50 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto space-y-6">
+        
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-brand-700 text-xs sm:text-sm font-bold shadow-xs">
+          <i class="fa-solid fa-store text-brand-600"></i>
+          Built for Retailers, Kiranas &amp; Small Vendors
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+          Never Run Out of Stock. <br class="hidden sm:inline">
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-sky-500">Never Throw Money</span> in the Trash.
+        </h1>
+
+        <p class="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto">
+          No more guessing every evening in your diary notebook. Our simple AI watches past sales, weather changes, and festival holidays to tell you <strong>exactly how much to order</strong>.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#simulator" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-base text-white bg-brand-600 hover:bg-brand-700 transition shadow-lg shadow-brand-600/25">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Try Shop Simulator</span>
+          </a>
+          <a href="#real-story" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-base text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 transition">
+            <i class="fa-solid fa-circle-play text-brand-600"></i>
+            <span>See Rahul's Story (Real Example)</span>
+          </a>
+        </div>
+
+        <!-- 3 Quick Proof Badges -->
+        <div class="pt-8 grid grid-cols-3 gap-2 sm:gap-6 border-t border-slate-200 max-w-2xl mx-auto">
+          <div class="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+            <p class="text-xl sm:text-2xl font-black text-emerald-600">₹5,300+</p>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Monthly Cash Saved on ₹1L Sales</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+            <p class="text-xl sm:text-2xl font-black text-brand-600">14 Hours</p>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Saved from Counting Stock</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+            <p class="text-xl sm:text-2xl font-black text-indigo-600">3 Days</p>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Advance Reorder Warning</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="real-story" class="py-20 bg-white border-y border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-brand-600 font-bold text-xs uppercase tracking-widest bg-brand-50 px-3 py-1 rounded-full border border-brand-200">
+          Real Life Example
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+          Meet Rahul: The Everyday Shopkeeper Story
+        </h2>
+        <p class="text-slate-600 mt-2 text-base">
+          Rahul runs a friendly bakery and grocery store. He does <strong class="text-slate-900"><span class="curr-symbol">₹</span><span class="curr-val-rahul-sales">1,00,000</span> in sales every month</strong>. Look at where his hard-earned cash was disappearing:
+        </p>
+      </div>
+
+      <!-- Problem Cards: Where the Money Was Lost -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        
+        <!-- Problem A: Empty Shelves -->
+        <div class="p-6 sm:p-8 rounded-2xl bg-rose-50/60 border-2 border-rose-200 relative">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🚫</span>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900">Problem A: Empty Shelves (Stockout)</h3>
+                <p class="text-xs text-rose-700 font-semibold">Customers walk away without buying</p>
+              </div>
+            </div>
+            <span class="text-sm font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-full">
+              -<span class="curr-symbol">₹</span><span class="curr-val-rahul-empty">5,000</span> / mo
+            </span>
+          </div>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            Every morning, 5 or 6 regular customers ask for brown bread or fresh paneer. Rahul ran out the night before. Customers walk to another shop. 
+          </p>
+          <div class="mt-4 pt-3 border-t border-rose-200 text-xs font-semibold text-rose-800 flex items-center justify-between">
+            <span>Result: Lost ₹5,000 in sales every single month</span>
+            <span>Customer Disappointment</span>
+          </div>
+        </div>
+
+        <!-- Problem B: Expired Goods -->
+        <div class="p-6 sm:p-8 rounded-2xl bg-amber-50/60 border-2 border-amber-200 relative">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">🗑️</span>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900">Problem B: Spoiled Food in Trash (Waste)</h3>
+                <p class="text-xs text-amber-700 font-semibold">Over-ordered items expire on the shelf</p>
+              </div>
+            </div>
+            <span class="text-sm font-black text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
+              -<span class="curr-symbol">₹</span><span class="curr-val-rahul-waste">3,000</span> / mo
+            </span>
+          </div>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            Last weekend, Rahul ordered 50 extra packets of milk and yogurt thinking Sunday would be crowded. It rained heavily, fewer shoppers came, and 20 packets spoiled by Monday.
+          </p>
+          <div class="mt-4 pt-3 border-t border-amber-200 text-xs font-semibold text-amber-800 flex items-center justify-between">
+            <span>Result: Threw ₹3,000 worth of milk &amp; yogurt in the bin</span>
+            <span>Pure Money Wasted</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- The Total Loss Callout Banner -->
+      <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 mb-12 shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span class="text-rose-400 font-bold uppercase text-xs tracking-wider">Before StockPulse AI</span>
+          <h4 class="text-2xl font-bold mt-1 text-white">Rahul was quietly losing <span class="text-rose-400 font-extrabold"><span class="curr-symbol">₹</span><span class="curr-val-rahul-total-loss">8,000</span> every month</span></h4>
+          <p class="text-slate-400 text-sm mt-1">That's <span class="curr-symbol">₹</span><span class="curr-val-rahul-annual-loss">96,000</span> lost every single year without even knowing it.</p>
+        </div>
+        <div class="flex-shrink-0 text-center bg-slate-800 py-3 px-6 rounded-xl border border-slate-700">
+          <span class="text-xs text-slate-400 block">Total Lost Revenue</span>
+          <span class="text-3xl font-black text-rose-400">-8% of Turnover</span>
+        </div>
+      </div>
+
+      <!-- How AI Changed Everything for Rahul -->
+      <div class="bg-gradient-to-br from-emerald-50 to-teal-50/60 rounded-3xl p-6 sm:p-10 border-2 border-emerald-400 shadow-md">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-emerald-200">
+          <div>
+            <span class="bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              The AI Fix
+            </span>
+            <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+              How StockPulse AI Fixed Rahul's Shop
+            </h3>
+            <p class="text-sm text-slate-700 mt-1">
+              The AI connects to his billing machine and simply gives him 1 clear advice every morning:
+            </p>
+          </div>
+          <div class="bg-white px-5 py-3 rounded-2xl border border-emerald-300 shadow-xs flex items-center gap-3">
+            <span class="text-2xl">📱</span>
+            <div class="text-xs">
+              <span class="font-bold text-slate-900 block">Morning Phone Alert:</span>
+              <span class="text-emerald-700">"Rain forecast Sunday: Order 15 less milk. Monday is holiday: Add 20 breads."</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Big Numbers Rahul Gained -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 text-center">
+          <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Recovered Sales</span>
+            <span class="text-3xl font-black text-emerald-600 mt-1 block">+<span class="curr-symbol">₹</span><span class="curr-val-rahul-saved-sales">3,500</span>/mo</span>
+            <span class="text-xs text-slate-600 mt-1 block">70% of out-of-stock items saved</span>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Saved from Trash</span>
+            <span class="text-3xl font-black text-emerald-600 mt-1 block">+<span class="curr-symbol">₹</span><span class="curr-val-rahul-saved-waste">1,800</span>/mo</span>
+            <span class="text-xs text-slate-600 mt-1 block">60% cut in spoiled expiration waste</span>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Net Cash in Pocket</span>
+            <span class="text-3xl font-black text-emerald-600 mt-1 block">+<span class="curr-symbol">₹</span><span class="curr-val-rahul-net-profit">5,300</span>/mo</span>
+            <span class="text-xs text-slate-600 mt-1 block"><strong>+<span class="curr-symbol">₹</span><span class="curr-val-rahul-annual-profit">63,600</span></strong> Extra profit per year!</span>
+          </div>
+        </div>
+
+        <div class="mt-6 text-center bg-white/70 py-3 px-4 rounded-xl border border-emerald-200 text-xs font-semibold text-emerald-900">
+          ⏰ <strong>Bonus Time Saved:</strong> Rahul also saved <strong>14 hours every month</strong> previously spent counting dusty boxes and writing lists in diaries.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="simulator" class="py-20 bg-slate-900 text-white relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-500/20 text-brand-400 border border-brand-500/30">
+          <i class="fa-solid fa-calculator text-[10px]"></i>
+          Interactive Shopkeeper Calculator
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-white mt-3 tracking-tight">
+          How Much Can Your Shop Save?
+        </h2>
+        <p class="text-slate-400 mt-3 text-base">
+          Adjust the simple slider to your monthly sales. See your extra profit in seconds.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Side: Simple Inputs (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-700 shadow-2xl space-y-8">
+          
+          <!-- Shop Type Selector -->
+          <div>
+            <span class="text-xs font-bold tracking-wider uppercase text-brand-400 flex items-center gap-2 mb-3">
+              <span class="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center text-[11px]">1</span>
+              What Type of Shop Do You Run?
+            </span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <button onclick="changeShopType('bakery')" id="shop-btn-bakery" class="shop-btn active p-3 rounded-2xl border-2 transition text-left flex flex-col justify-between bg-brand-600/30 border-brand-500 text-white">
+                <span class="text-2xl mb-1">🍞</span>
+                <span class="text-xs font-bold">Bakery / Dairy</span>
+                <span class="text-[10px] text-slate-400">High daily spoil</span>
+              </button>
+
+              <button onclick="changeShopType('grocery')" id="shop-btn-grocery" class="shop-btn p-3 rounded-2xl border-2 transition text-left flex flex-col justify-between bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500">
+                <span class="text-2xl mb-1">🛒</span>
+                <span class="text-xs font-bold">Grocery / Kirana</span>
+                <span class="text-[10px] text-slate-400">Fast pantry items</span>
+              </button>
+
+              <button onclick="changeShopType('retail')" id="shop-btn-retail" class="shop-btn p-3 rounded-2xl border-2 transition text-left flex flex-col justify-between bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500">
+                <span class="text-2xl mb-1">👕</span>
+                <span class="text-xs font-bold">Clothing / Retail</span>
+                <span class="text-[10px] text-slate-400">Size &amp; style stock</span>
+              </button>
+
+              <button onclick="changeShopType('pharmacy')" id="shop-btn-pharmacy" class="shop-btn p-3 rounded-2xl border-2 transition text-left flex flex-col justify-between bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500">
+                <span class="text-2xl mb-1">💊</span>
+                <span class="text-xs font-bold">Medical Store</span>
+                <span class="text-[10px] text-slate-400">Critical availability</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Monthly Sales Slider -->
+          <div class="pt-2 border-t border-slate-700/80">
+            <span class="text-xs font-bold tracking-wider uppercase text-brand-400 flex items-center gap-2 mb-3">
+              <span class="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center text-[11px]">2</span>
+              Your Average Monthly Sales (Billing)
+            </span>
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-sm text-slate-300 font-semibold">Monthly Sales:</span>
+                <span id="slider-display-val" class="text-2xl font-black text-emerald-400">₹1,00,000 / month</span>
+              </div>
+              <input type="range" id="sales-slider" min="25000" max="1000000" step="5000" value="100000" class="custom-range w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+              <div class="flex justify-between text-[11px] text-slate-500 mt-2 font-medium">
+                <span id="slider-min-lbl">₹25,000 (Small Kiosk)</span>
+                <span id="slider-mid-lbl">₹5,00,000</span>
+                <span id="slider-max-lbl">₹10,00,000+ (Supermarket)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real Situation Buttons -->
+          <div class="pt-2 border-t border-slate-700/80">
+            <span class="text-xs font-bold tracking-wider uppercase text-brand-400 flex items-center gap-2 mb-3">
+              <span class="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center text-[11px]">3</span>
+              Check an Upcoming Situation
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <button onclick="setScenario('rain')" id="scen-btn-rain" class="scen-btn active py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 bg-brand-600/30 border-brand-500 text-white transition">
+                <span>🌧️</span> Rainy Days
+              </button>
+              <button onclick="setScenario('festival')" id="scen-btn-festival" class="scen-btn py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500 transition">
+                <span>🎉</span> Festival / Holiday
+              </button>
+              <button onclick="setScenario('normal')" id="scen-btn-normal" class="scen-btn py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500 transition">
+                <span>☀️</span> Regular Normal Days
+              </button>
+            </div>
+            <p id="scenario-tip" class="text-xs text-brand-300 mt-3 font-medium bg-brand-950/60 p-3 rounded-xl border border-brand-900">
+              🌧️ <strong>Rainy Days:</strong> AI cuts perishable orders by 25% so milk and bread don't spoil, while boosting tea, coffee &amp; snack buffer.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Right Side: Big Result Dashboard (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+          
+          <div class="bg-gradient-to-br from-slate-800 to-slate-850 p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-700">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Calculated Benefit</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                100% Realistic Math
+              </span>
+            </div>
+
+            <!-- Big Highlight: Cash You Save Every Month -->
+            <div class="my-5">
+              <p class="text-xs font-bold text-slate-300 uppercase tracking-wider">Cash You Save Every Month</p>
+              <p id="res-monthly-savings" class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400 mt-1">
+                +₹5,300 / mo
+              </p>
+              <p class="text-xs text-slate-400 mt-1">Money that previously went into spoiled items or missed sales.</p>
+            </div>
+
+            <!-- Annual Extra Profit & Hours Saved -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-center">
+                <span class="text-[11px] text-slate-400 font-semibold block">Annual Extra Profit</span>
+                <span id="res-annual-savings" class="text-xl sm:text-2xl font-black text-emerald-400 mt-0.5 block">+₹63,600</span>
+                <span class="text-[10px] text-slate-500">Every single year</span>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-center">
+                <span class="text-[11px] text-slate-400 font-semibold block">Hours Saved</span>
+                <span id="res-hours-saved" class="text-xl sm:text-2xl font-black text-brand-400 mt-0.5 block">14 Hours</span>
+                <span class="text-[10px] text-slate-500">No diary counting</span>
+              </div>
+            </div>
+
+            <!-- Visual Shelf Meter -->
+            <div class="mt-6 pt-5 border-t border-slate-700 space-y-3">
+              <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                  <span class="text-slate-300">Shelf Availability (In Stock)</span>
+                  <span id="res-shelf-meter" class="text-emerald-400 font-bold">98% (was 88%)</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                  <div id="res-shelf-bar" class="bg-emerald-400 h-full rounded-full transition-all duration-300" style="width: 98%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                  <span class="text-slate-300">Food / Stock Waste Cut</span>
+                  <span class="text-emerald-400 font-bold">-60% Less Trash</span>
+                </div>
+                <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                  <div class="bg-teal-400 h-full rounded-full" style="width: 60%;"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Action Button: Send to Contact Form -->
+          <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700 text-center space-y-3">
+            <p class="text-xs text-slate-300 font-medium">
+              Want our technical team to verify this estimate for your shop?
+            </p>
+            <button onclick="fillScopeFormFromSimulator()" class="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition shadow-lg shadow-emerald-400/20 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-arrow-down"></i>
+              <span>Send This Estimate to My Free Project Scope Form &rarr;</span>
+            </button>
+            <span class="text-[11px] text-slate-400 block">
+              1-click copies these numbers directly into the project form below.
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <section id="comparison" class="py-20 bg-white border-y border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-brand-600 font-bold text-xs uppercase tracking-widest bg-brand-50 px-3 py-1 rounded-full border border-brand-200">
+          Clear Comparison
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+          The Old Notebook Diary vs. StockPulse AI
+        </h2>
+        <p class="text-slate-600 mt-2 text-base">
+          Why traditional store methods cause headaches, and how simple AI makes life peaceful.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Old Diary Way -->
+        <div class="rounded-2xl p-8 bg-rose-50/50 border-2 border-rose-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-book"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-slate-900">The Old Notebook Way</h3>
+                <p class="text-xs text-rose-700 font-semibold uppercase tracking-wider">Manual, Slow &amp; Tiring</p>
+              </div>
+            </div>
+
+            <ul class="space-y-4 text-sm text-slate-700">
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-xmark text-rose-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Guesswork Every Evening:</strong> You sit with a pen and paper guessing how much bread, milk, or biscuits to order for tomorrow.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-xmark text-rose-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Surprise Weather Ruin:</strong> Sudden rain on Sunday means foot traffic drops, leaving expired packets in your trash.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-xmark text-rose-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Losing High-Paying Customers:</strong> When a loyal buyer asks for their favorite brand and you say "kal aayega" (comes tomorrow), they walk to your competitor.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-xmark text-rose-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Money Stuck in Dust:</strong> Ordering too much of slow items traps your hard-earned cash on dusty backroom shelves.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-8 pt-4 border-t border-rose-200 text-xs font-bold text-rose-800 flex items-center justify-between">
+            <span>Result: Stress + Lost Cash Every Month</span>
+            <span>~8% Revenue Waste</span>
+          </div>
+        </div>
+
+        <!-- The StockPulse AI Way -->
+        <div class="rounded-2xl p-8 bg-blue-50/50 border-2 border-brand-500 flex flex-col justify-between shadow-xl shadow-brand-500/10 relative">
+          <div class="absolute top-0 right-0 bg-brand-600 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-xl">
+            Smart &amp; Peaceful
+          </div>
+
+          <div>
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-slate-900">With StockPulse AI</h3>
+                <p class="text-xs text-brand-700 font-semibold uppercase tracking-wider">Automated &amp; Stress-Free</p>
+              </div>
+            </div>
+
+            <ul class="space-y-4 text-sm text-slate-700">
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Ready in 1 Click:</strong> Your phone shows you a ready reorder list based on actual checkout sales. You just click "Confirm".
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Weather &amp; Festival Smart:</strong> The system automatically tells you to reduce milk before a rainy weekend and increase chips before a cricket match or festival.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">Customers Always Find Stock:</strong> Your most popular products never run out. Customers know they can count on your store.
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-500 mt-1"></i>
+                <div>
+                  <strong class="text-slate-900">More Cash in Your Bank:</strong> Because money isn't tied up in unsold expired goods, your working capital stays free and healthy.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-8 pt-4 border-t border-blue-200 text-xs font-bold text-brand-800 flex items-center justify-between">
+            <span>Result: Full Shelves + Extra Profit</span>
+            <span>+₹5,300+ Cash In Pocket</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <section id="how-it-works" class="py-20 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-brand-600 font-bold text-xs uppercase tracking-widest bg-brand-50 px-3 py-1 rounded-full border border-brand-200">
+          Easy 3-Step Setup
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+          How It Starts Working for Your Shop
+        </h2>
+        <p class="text-slate-600 mt-2 text-base">
+          You don't need any technical skills or software engineer background.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <div class="bg-white rounded-2xl p-8 border border-slate-200/80 shadow-sm text-center">
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-brand-600 flex items-center justify-center text-2xl font-black mx-auto mb-6">
+            1
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Connect Your Billing</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            We link to your existing billing machine, computer software, or simple Excel sheet. Takes under 30 minutes.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-8 border border-slate-200/80 shadow-sm text-center">
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-brand-600 flex items-center justify-center text-2xl font-black mx-auto mb-6">
+            2
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">AI Watches Demand</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            The AI automatically matches your daily sales against tomorrow's weather, local events, and weekend crowds.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-8 border border-slate-200/80 shadow-sm text-center">
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-brand-600 flex items-center justify-center text-2xl font-black mx-auto mb-6">
+            3
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Get Phone Reorder Alert</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            Every morning or evening, get a clean WhatsApp or mobile alert showing exactly what items to order from your distributor.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <section id="discovery" class="py-20 bg-slate-900 text-white relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <span class="text-brand-400 font-bold text-xs uppercase tracking-widest bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">
+          Free Discovery &amp; Estimation
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-3">
+          Get a Free Project Scope For Your Shop
+        </h2>
+        <p class="text-slate-400 mt-2 text-sm sm:text-base">
+          Tell us about your store. We will prepare an exact profit recovery estimate and setup plan for you. Free of charge, no obligations.
+        </p>
+      </div>
+
+      <div class="bg-slate-800 rounded-3xl p-6 sm:p-10 border border-slate-700 shadow-2xl">
+        
+        <form id="project-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            
+            <!-- Owner Name -->
+            <div>
+              <label for="f-name" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Your Full Name *
+              </label>
+              <input type="text" id="f-name" required placeholder="e.g. Rahul Sharma" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- Business / Shop Name -->
+            <div>
+              <label for="f-shop" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Shop or Business Name *
+              </label>
+              <input type="text" id="f-shop" required placeholder="e.g. Sharma Grocery &amp; Bakery" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- Phone or Email -->
+            <div>
+              <label for="f-contact" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                WhatsApp Phone or Email *
+              </label>
+              <input type="text" id="f-contact" required placeholder="e.g. +91 98765 43210 or name@shop.com" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- Shop Type -->
+            <div>
+              <label for="f-type" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Type of Store
+              </label>
+              <select id="f-type" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-brand-500 text-sm">
+                <option value="Bakery / Dairy Store">Bakery / Dairy Store</option>
+                <option value="Grocery & Kirana Store">Grocery &amp; Kirana Store</option>
+                <option value="Clothing / Retail Store">Clothing / Retail Store</option>
+                <option value="Pharmacy / Medical Store">Pharmacy / Medical Store</option>
+                <option value="Other Retail Outlet">Other Retail Outlet</option>
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Estimated Monthly Sales -->
+          <div>
+            <label for="f-sales" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+              Approximate Monthly Sales
+            </label>
+            <input type="text" id="f-sales" placeholder="e.g. ₹1,00,000 / month" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+          </div>
+
+          <!-- Notes / Current Problem -->
+          <div>
+            <label for="f-notes" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+              Your Current Biggest Problem or Notes
+            </label>
+            <textarea id="f-notes" rows="3" placeholder="Tell us if you suffer from spoiled items, missed customer sales, or spend too much time counting stock every evening..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm"></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="text-center pt-2">
+            <button type="submit" id="f-btn" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base transition shadow-lg shadow-emerald-500/25">
+              Submit &amp; Get Free Discovery Blueprint &rarr;
+            </button>
+            <p class="text-xs text-slate-400 mt-3">
+              <i class="fa-solid fa-lock text-slate-500 mr-1"></i> No spam. 100% free consultation. We usually reply within 24 hours.
+            </p>
+          </div>
+
+        </form>
+
+        <!-- Dynamic In-Page Confirmation Box (Hidden initially) -->
+        <div id="form-confirmation" class="hidden mt-8 p-6 rounded-2xl bg-emerald-950 border border-emerald-500 text-emerald-100">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <h4 class="text-lg font-bold text-white">Discovery Blueprint Request Received!</h4>
+          </div>
+          <p class="text-sm text-emerald-200">
+            Thank you, <span id="conf-owner" class="font-bold text-white"></span>! We have noted the details for <span id="conf-shop" class="font-bold text-white"></span> (<span id="conf-sales" class="font-bold text-white"></span>).
+          </p>
+          <div class="mt-4 p-4 rounded-xl bg-slate-900 text-xs text-slate-300 space-y-1.5 border border-slate-800">
+            <p class="font-bold text-brand-400 uppercase tracking-wider text-[11px]">Next Steps for Your Store:</p>
+            <p>&bull; 1. A stock consultant will analyze your store category.</p>
+            <p>&bull; 2. We will send a WhatsApp/Email summary showing your exact monthly recovery potential.</p>
+            <p>&bull; 3. We will show you how to setup the 30-minute billing connect with zero disruption.</p>
+          </div>
+          <p class="text-xs text-emerald-300 mt-4">
+            Confirmation sent to: <span id="conf-contact" class="font-semibold text-white"></span>
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+  <section id="discovery" class="py-20 bg-slate-900 text-white relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <span class="text-brand-400 font-bold text-xs uppercase tracking-widest bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">
+          Free Discovery &amp; Estimation
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-3">
+          Get a Free Project Scope For Your Shop
+        </h2>
+        <p class="text-slate-400 mt-2 text-sm sm:text-base">
+          Tell us about your store. We will prepare an exact profit recovery estimate, technical architecture, and implementation plan. Free of charge, zero commitment.
+        </p>
+      </div>
+
+      <!-- Live Simulator Sync Banner (Appears when simulator values are sent or modified) -->
+      <div id="scope-summary-banner" class="mb-8 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-850 border-2 border-emerald-500/40 p-5 sm:p-6 shadow-xl relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-700/80">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl" id="banner-shop-icon">🍞</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Simulated Shop Baseline</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Synced from Simulator</span>
+              </div>
+              <h4 id="banner-shop-name" class="text-base sm:text-lg font-bold text-white">Bakery / Dairy Store</h4>
+            </div>
+          </div>
+          <button onclick="scrollToSimulator()" type="button" class="text-xs text-brand-400 hover:text-brand-300 font-semibold underline self-start sm:self-auto">
+            Change in Simulator &uarr;
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 text-center">
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] text-slate-400 font-medium block">Monthly Sales</span>
+            <span id="banner-sales-val" class="text-base sm:text-lg font-black text-white mt-0.5 block">₹1,00,000 / mo</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] text-slate-400 font-medium block">Projected Cash Recovery</span>
+            <span id="banner-savings-val" class="text-base sm:text-lg font-black text-emerald-400 mt-0.5 block">+₹5,300 / mo</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] text-slate-400 font-medium block">Annual Profit Boost</span>
+            <span id="banner-annual-val" class="text-base sm:text-lg font-black text-teal-300 mt-0.5 block">+₹63,600 / yr</span>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] text-slate-400 font-medium block">Time Recovered</span>
+            <span id="banner-hours-val" class="text-base sm:text-lg font-black text-brand-400 mt-0.5 block">14 hrs / mo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-3xl p-6 sm:p-10 border border-slate-700 shadow-2xl">
+        
+        <form id="project-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            
+            <!-- Owner Name -->
+            <div>
+              <label for="f-name" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Your Full Name *
+              </label>
+              <input type="text" id="f-name" required placeholder="e.g. Rahul Sharma" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- Business / Shop Name -->
+            <div>
+              <label for="f-shop" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Shop or Business Name *
+              </label>
+              <input type="text" id="f-shop" required placeholder="e.g. Sharma Grocery &amp; Bakery" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- WhatsApp / Phone -->
+            <div>
+              <label for="f-contact" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                WhatsApp Phone or Email *
+              </label>
+              <input type="text" id="f-contact" required placeholder="e.g. +91 98765 43210 or rahul@store.com" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- City / Location -->
+            <div>
+              <label for="f-city" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                City / Location
+              </label>
+              <input type="text" id="f-city" placeholder="e.g. Ahmedabad, Mumbai, Delhi, Austin..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+            <!-- Shop Type (Populated from Simulator) -->
+            <div>
+              <label for="f-type" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Type of Store
+              </label>
+              <select id="f-type" onchange="syncFromDropdown(this.value)" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-brand-500 text-sm">
+                <option value="bakery">Bakery / Dairy Store</option>
+                <option value="grocery">Grocery &amp; Kirana Store</option>
+                <option value="retail">Clothing / Retail Store</option>
+                <option value="pharmacy">Pharmacy / Medical Store</option>
+              </select>
+            </div>
+
+            <!-- Estimated Monthly Sales (Populated from Simulator) -->
+            <div>
+              <label for="f-sales" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Monthly Turnover / Sales
+              </label>
+              <input type="text" id="f-sales" placeholder="e.g. ₹1,00,000 / month" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm">
+            </div>
+
+          </div>
+
+          <!-- Additional Parameters Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-1">
+            <div>
+              <label for="f-savings-target" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Target Monthly Cash Recovery
+              </label>
+              <input type="text" id="f-savings-target" readonly class="w-full px-4 py-3 rounded-xl bg-slate-900/60 border border-slate-700 text-emerald-400 font-bold focus:outline-none text-sm cursor-not-allowed">
+            </div>
+            <div>
+              <label for="f-outlets" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                Number of Outlets / Counters
+              </label>
+              <select id="f-outlets" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-brand-500 text-sm">
+                <option value="1">Single Shop (1 counter)</option>
+                <option value="2-3">2 - 3 Outlets</option>
+                <option value="4-10">4 - 10 Outlets</option>
+                <option value="10+">10+ Multi-Branch Chain</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Dynamic Customized Scope Breakdown -->
+          <div class="pt-4 border-t border-slate-700/80">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-list-check"></i>
+              Custom Delivery Blueprint (Estimated 4 - 5 Weeks)
+            </span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700">
+                <span class="text-brand-400 font-bold block mb-1">Phase 1: Week 1-2</span>
+                <strong class="text-white block mb-1">Billing &amp; Weather Sync</strong>
+                <p class="text-slate-400 text-[11px] leading-relaxed">Connect Point-of-Sale / Excel ledger and tie into local weather &amp; holiday forecasts.</p>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700">
+                <span class="text-brand-400 font-bold block mb-1">Phase 2: Week 3-4</span>
+                <strong class="text-white block mb-1">Stock Prediction Engine</strong>
+                <p class="text-slate-400 text-[11px] leading-relaxed">Train model on sales patterns to prevent out-of-stock items and perishable food spoilage.</p>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700">
+                <span class="text-brand-400 font-bold block mb-1">Phase 3: Week 5</span>
+                <strong class="text-white block mb-1">Phone Alert &amp; Approval</strong>
+                <p class="text-slate-400 text-[11px] leading-relaxed">Daily WhatsApp / SMS reorder recommendations ready for 1-click supplier approval.</p>
+              </div>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
+              <span>✓ Zero upfront software lock-in</span>
+              <span>✓ Free 30-day proof of value trial</span>
+            </div>
+          </div>
+
+          <!-- Notes / Current Problem -->
+          <div>
+            <label for="f-notes" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+              Specific Requirements or Notes
+            </label>
+            <textarea id="f-notes" rows="3" placeholder="Tell us if you suffer from spoiled items, missed customer sales, or spend too much time counting stock every evening..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 text-sm"></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="text-center pt-2">
+            <button type="submit" id="f-btn" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 mx-auto">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Submit for Free Scope Discovery Call &rarr;</span>
+            </button>
+            <p class="text-xs text-slate-400 mt-3">
+              <i class="fa-solid fa-lock text-slate-500 mr-1"></i> No spam. 100% free consultation. We review your figures and respond within 24 hours.
+            </p>
+          </div>
+
+        </form>
+
+        <!-- Dynamic In-Page Confirmation Card (Hidden initially) -->
+        <div id="form-confirmation" class="hidden mt-8 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-emerald-950 to-slate-900 border-2 border-emerald-500 text-emerald-100 shadow-2xl">
+          <div class="flex items-center justify-between pb-4 border-b border-emerald-500/30">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-lg">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <div>
+                <h4 class="text-xl font-black text-white">Discovery Call Request Confirmed!</h4>
+                <p class="text-xs text-emerald-300">Reference ID: <span id="conf-ref-id" class="font-mono font-bold text-white">SP-84920</span></p>
+              </div>
+            </div>
+            <span class="hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              Priority Review
+            </span>
+          </div>
+
+          <div class="mt-4 text-sm text-emerald-200 leading-relaxed">
+            Thank you, <strong id="conf-owner" class="text-white">Rahul</strong>! We have customized your discovery scope for <strong id="conf-shop" class="text-white">Sharma Bakery</strong> with an estimated baseline of <strong id="conf-sales" class="text-white">₹1,00,000 / mo</strong>.
+          </div>
+
+          <!-- Scope Summary Grid -->
+          <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div class="p-3.5 rounded-xl bg-slate-950/70 border border-emerald-900/60">
+              <span class="text-slate-400 block mb-0.5">Projected Monthly Gain</span>
+              <strong id="conf-recovery" class="text-emerald-300 text-base block font-black">+₹5,300 / mo</strong>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-950/70 border border-emerald-900/60">
+              <span class="text-slate-400 block mb-0.5">Delivery Timeline</span>
+              <strong class="text-white text-base block font-black">4 - 5 Weeks</strong>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-950/70 border border-emerald-900/60">
+              <span class="text-slate-400 block mb-0.5">Contact Method</span>
+              <strong id="conf-contact" class="text-brand-300 text-base block font-black truncate">--</strong>
+            </div>
+          </div>
+
+          <div class="mt-5 p-4 rounded-xl bg-slate-950/90 text-xs text-slate-300 space-y-2 border border-slate-800">
+            <p class="font-bold text-emerald-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left"></i> Next Steps Within 24 Hours:
+            </p>
+            <p>&bull; 1. A dedicated stock solutions engineer will review your shop category requirements.</p>
+            <p>&bull; 2. We will send a WhatsApp / Email calendar invite for a friendly 20-minute Zoom or phone walkthrough.</p>
+            <p>&bull; 3. You receive your free Technical Architecture &amp; Delivery Breakdown document.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">
+            <i class="fa-solid fa-boxes-stacked text-sm"></i>
+          </div>
+          <span class="text-base font-bold text-white">StockPulse AI</span>
+          <span class="text-slate-500">| Simple Retail Demand &amp; Stock Forecasting</span>
+        </div>
+
+        <div class="flex gap-6">
+          <a href="#real-story" class="hover:text-white transition">Rahul's Story</a>
+          <a href="#simulator" class="hover:text-white transition">Simulator</a>
+          <a href="#comparison" class="hover:text-white transition">Notebook vs AI</a>
+          <a href="#how-it-works" class="hover:text-white transition">How It Works</a>
+          <a href="#discovery" class="hover:text-white transition">Free Discovery</a>
+        </div>
+
+        <p class="text-slate-500">
+          &copy; 2026 StockPulse AI. Helping small vendors &amp; retail shops grow.
+        </p>
+
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // State variables
+    let currentCurrency = 'INR'; // 'INR' or 'USD'
+    let inrToUsdRate = 83; // 1 USD = 83 INR
+    let activeShop = 'bakery'; // bakery, grocery, retail, pharmacy
+    let activeScenario = 'rain'; // rain, festival, normal
+
+    // Shop multipliers (Loss % from missed sales, Loss % from expired/dead stock)
+    const shopConfig = {
+      bakery: { name: 'Bakery / Dairy Store', icon: '🍞', missedRate: 0.05, wasteRate: 0.03, hours: 14, recoverSales: 0.70, cutWaste: 0.60 },
+      grocery: { name: 'Grocery & Kirana Store', icon: '🛒', missedRate: 0.06, wasteRate: 0.02, hours: 12, recoverSales: 0.70, cutWaste: 0.55 },
+      retail: { name: 'Clothing / Retail Store', icon: '👕', missedRate: 0.07, wasteRate: 0.04, hours: 16, recoverSales: 0.65, cutWaste: 0.50 },
+      pharmacy: { name: 'Pharmacy / Medical Store', icon: '💊', missedRate: 0.08, wasteRate: 0.015, hours: 10, recoverSales: 0.75, cutWaste: 0.50 }
+    };
+
+    // Scenario multiplier on demand/spoilage
+    const scenarioConfig = {
+      rain: { multiplier: 1.15, text: '🌧️ <strong>Rainy Days:</strong> AI cuts perishable orders by 25% so milk and bread don\'t spoil, while boosting tea, coffee & snack buffer.' },
+      festival: { multiplier: 1.30, text: '🎉 <strong>Festival / Holiday Week:</strong> AI alerts you 4 days earlier to stock up popular sweets, snacks & gift boxes to avoid running out.' },
+      normal: { multiplier: 1.0, text: '☀️ <strong>Regular Normal Days:</strong> AI keeps lean stock, ordering exact replacements based on yesterday\'s checkout speeds.' }
+    };
+
+    // Mobile menu toggle
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // Format money helper
+    function formatMoney(amountInInr) {
+      if (currentCurrency === 'INR') {
+        return '₹' + Math.round(amountInInr).toLocaleString('en-IN');
+      } else {
+        const usdVal = Math.round(amountInInr / inrToUsdRate);
+        return '$' + usdVal.toLocaleString('en-US');
+      }
+    }
+
+    function getCurrencySymbol() {
+      return currentCurrency === 'INR' ? '₹' : '$';
+    }
+
+    // Set Currency
+    function setCurrency(curr) {
+      currentCurrency = curr;
+
+      // Update Nav Buttons
+      const inrBtn = document.getElementById('nav-btn-inr');
+      const usdBtn = document.getElementById('nav-btn-usd');
+      const mobInr = document.getElementById('mobile-btn-inr');
+      const mobUsd = document.getElementById('mobile-btn-usd');
+
+      if (curr === 'INR') {
+        inrBtn.className = 'px-3 py-1.5 rounded-lg currency-active transition';
+        usdBtn.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 transition';
+        mobInr.className = 'px-2 py-1 rounded bg-white text-slate-900 shadow-xs';
+        mobUsd.className = 'px-2 py-1 rounded text-slate-500';
+      } else {
+        usdBtn.className = 'px-3 py-1.5 rounded-lg currency-active transition';
+        inrBtn.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 transition';
+        mobUsd.className = 'px-2 py-1 rounded bg-white text-slate-900 shadow-xs';
+        mobInr.className = 'px-2 py-1 rounded text-slate-500';
+      }
+
+      // Update Rahul Story values across page
+      updateRahulStory();
+
+      // Recalculate Simulator
+      updateCalculator();
+    }
+
+    function updateRahulStory() {
+      document.querySelectorAll('.curr-symbol').forEach(el => el.textContent = getCurrencySymbol());
+      
+      const sales = currentCurrency === 'INR' ? '1,00,000' : '1,200';
+      const empty = currentCurrency === 'INR' ? '5,000' : '60';
+      const waste = currentCurrency === 'INR' ? '3,000' : '36';
+      const totalLoss = currentCurrency === 'INR' ? '8,000' : '96';
+      const annualLoss = currentCurrency === 'INR' ? '96,000' : '1,150';
+      const savedSales = currentCurrency === 'INR' ? '3,500' : '42';
+      const savedWaste = currentCurrency === 'INR' ? '1,800' : '22';
+      const netProfit = currentCurrency === 'INR' ? '5,300' : '64';
+      const annualProfit = currentCurrency === 'INR' ? '63,600' : '765';
+
+      document.querySelectorAll('.curr-val-rahul-sales').forEach(el => el.textContent = sales);
+      document.querySelectorAll('.curr-val-rahul-empty').forEach(el => el.textContent = empty);
+      document.querySelectorAll('.curr-val-rahul-waste').forEach(el => el.textContent = waste);
+      document.querySelectorAll('.curr-val-rahul-total-loss').forEach(el => el.textContent = totalLoss);
+      document.querySelectorAll('.curr-val-rahul-annual-loss').forEach(el => el.textContent = annualLoss);
+      document.querySelectorAll('.curr-val-rahul-saved-sales').forEach(el => el.textContent = savedSales);
+      document.querySelectorAll('.curr-val-rahul-saved-waste').forEach(el => el.textContent = savedWaste);
+      document.querySelectorAll('.curr-val-rahul-net-profit').forEach(el => el.textContent = netProfit);
+      document.querySelectorAll('.curr-val-rahul-annual-profit').forEach(el => el.textContent = annualProfit);
+
+      // Update slider bounds labels
+      document.getElementById('slider-min-lbl').textContent = formatMoney(25000) + ' (Small Kiosk)';
+      document.getElementById('slider-mid-lbl').textContent = formatMoney(500000);
+      document.getElementById('slider-max-lbl').textContent = formatMoney(1000000) + '+ (Supermarket)';
+    }
+
+    // Change Shop Type in Simulator
+    function changeShopType(type) {
+      activeShop = type;
+      document.querySelectorAll('.shop-btn').forEach(btn => {
+        btn.className = 'shop-btn p-3 rounded-2xl border-2 transition text-left flex flex-col justify-between bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500';
+      });
+      const activeBtn = document.getElementById('shop-btn-' + type);
+      if (activeBtn) {
+        activeBtn.className = 'shop-btn active p-3 rounded-2xl border-2 transition text-left flex flex-col justify-between bg-brand-600/30 border-brand-500 text-white';
+      }
+      updateCalculator();
+    }
+
+    // Change Scenario in Simulator
+    function setScenario(scen) {
+      activeScenario = scen;
+      document.querySelectorAll('.scen-btn').forEach(btn => {
+        btn.className = 'scen-btn py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 bg-slate-700/50 border-slate-700 text-slate-300 hover:border-slate-500 transition';
+      });
+      const activeScenBtn = document.getElementById('scen-btn-' + scen);
+      if (activeScenBtn) {
+        activeScenBtn.className = 'scen-btn active py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 bg-brand-600/30 border-brand-500 text-white transition';
+      }
+      document.getElementById('scenario-tip').innerHTML = scenarioConfig[scen].text;
+      updateCalculator();
+    }
+
+    // Primary Calculator Calculation
+    function updateCalculator() {
+      const salesSlider = document.getElementById('sales-slider');
+      const salesInInr = parseInt(salesSlider.value, 10);
+      
+      // Update Slider Display
+      document.getElementById('slider-display-val').textContent = formatMoney(salesInInr) + ' / month';
+
+      const cfg = shopConfig[activeShop];
+      const scen = scenarioConfig[activeScenario];
+
+      // Losses without AI
+      const missedSalesLoss = salesInInr * cfg.missedRate;
+      const expiredWasteLoss = salesInInr * cfg.wasteRate;
+
+      // Recovered with AI
+      const recoveredSales = missedSalesLoss * cfg.recoverSales * scen.multiplier;
+      const savedWaste = expiredWasteLoss * cfg.cutWaste;
+
+      const monthlyCashSaved = Math.round(recoveredSales + savedWaste);
+      const annualCashSaved = monthlyCashSaved * 12;
+
+      // Calculate approximate hours saved per month
+      const hoursSaved = Math.round(cfg.hours * (salesInInr / 100000 >= 1 ? Math.min(2.5, salesInInr / 100000) : 0.8));
+
+      // Update Simulator Display DOM
+      document.getElementById('res-monthly-savings').textContent = '+' + formatMoney(monthlyCashSaved) + ' / mo';
+      document.getElementById('res-annual-savings').textContent = '+' + formatMoney(annualCashSaved);
+      document.getElementById('res-hours-saved').textContent = hoursSaved + ' Hours';
+
+      // Shelf meter update
+      const initialAvailability = 88;
+      const aiAvailability = Math.min(99, Math.round(initialAvailability + 10));
+      document.getElementById('res-shelf-meter').textContent = aiAvailability + '% (was 88%)';
+      document.getElementById('res-shelf-bar').style.width = aiAvailability + '%';
+
+      // Synchronize Scope Form live banner & fields
+      updateScopeFormFields(salesInInr, cfg, monthlyCashSaved, annualCashSaved, hoursSaved);
+    }
+
+    // Synchronize Scope Form with current active simulator parameters
+    function updateScopeFormFields(salesInInr, cfg, monthlyCashSaved, annualCashSaved, hoursSaved) {
+      // Banner updates
+      const bannerIcon = document.getElementById('banner-shop-icon');
+      const bannerName = document.getElementById('banner-shop-name');
+      const bannerSales = document.getElementById('banner-sales-val');
+      const bannerSavings = document.getElementById('banner-savings-val');
+      const bannerAnnual = document.getElementById('banner-annual-val');
+      const bannerHours = document.getElementById('banner-hours-val');
+
+      if (bannerIcon) bannerIcon.textContent = cfg.icon;
+      if (bannerName) bannerName.textContent = cfg.name;
+      if (bannerSales) bannerSales.textContent = formatMoney(salesInInr) + ' / mo';
+      if (bannerSavings) bannerSavings.textContent = '+' + formatMoney(monthlyCashSaved) + ' / mo';
+      if (bannerAnnual) bannerAnnual.textContent = '+' + formatMoney(annualCashSaved) + ' / yr';
+      if (bannerHours) bannerHours.textContent = hoursSaved + ' hrs / mo';
+
+      // Form input updates
+      const fType = document.getElementById('f-type');
+      const fSales = document.getElementById('f-sales');
+      const fSavingsTarget = document.getElementById('f-savings-target');
+
+      if (fType) fType.value = activeShop;
+      if (fSales && (!fSales.dataset.userEdited || fSales.dataset.userEdited === 'false')) {
+        fSales.value = formatMoney(salesInInr) + ' / month';
+      }
+      if (fSavingsTarget) {
+        fSavingsTarget.value = '+' + formatMoney(monthlyCashSaved) + ' / month (+ ' + formatMoney(annualCashSaved) + ' / yr)';
+      }
+    }
+
+    function scrollToSimulator() {
+      const sim = document.getElementById('simulator');
+      if (sim) sim.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function syncFromDropdown(shopKey) {
+      if (shopConfig[shopKey]) {
+        changeShopType(shopKey);
+      }
+    }
+
+    // Connect slider input
+    document.getElementById('sales-slider').addEventListener('input', updateCalculator);
+
+    // Track manual edits to the monthly sales field
+    const salesInput = document.getElementById('f-sales');
+    if (salesInput) {
+      salesInput.addEventListener('input', () => {
+        salesInput.dataset.userEdited = 'true';
+      });
+    }
+
+    // Auto-fill Contact / Discovery Form from Simulator Numbers
+    function fillScopeFormFromSimulator() {
+      const salesSlider = document.getElementById('sales-slider');
+      const salesInInr = parseInt(salesSlider.value, 10);
+      const shopInfo = shopConfig[activeShop];
+
+      // Reset manual flag to reflect simulator accurately
+      if (salesInput) salesInput.dataset.userEdited = 'false';
+
+      // Update Form Fields
+      document.getElementById('f-type').value = activeShop;
+      document.getElementById('f-sales').value = formatMoney(salesInInr) + ' / month';
+      
+      const monthlySaved = document.getElementById('res-monthly-savings').textContent;
+      const annualSaved = document.getElementById('res-annual-savings').textContent;
+      const hoursSaved = document.getElementById('res-hours-saved').textContent;
+
+      document.getElementById('f-notes').value = 
+        `Simulated Project Parameters:\n` +
+        `- Category: ${shopInfo.name}\n` +
+        `- Estimated Sales: ${formatMoney(salesInInr)}/month\n` +
+        `- Projected Recovery Target: ${monthlySaved} (${annualSaved}/year)\n` +
+        `- Manual Count Hours Saved: ${hoursSaved}/month\n` +
+        `- Stress Scenario Tested: ${activeScenario.toUpperCase()}`;
+
+      // Smooth scroll to Discovery section
+      const discoverySection = document.getElementById('discovery');
+      discoverySection.scrollIntoView({ behavior: 'smooth' });
+
+      // Highlight the banner briefly
+      const banner = document.getElementById('scope-summary-banner');
+      if (banner) {
+        banner.classList.add('ring-4', 'ring-emerald-400');
+        setTimeout(() => banner.classList.remove('ring-4', 'ring-emerald-400'), 1200);
+      }
+
+      setTimeout(() => {
+        const nameInput = document.getElementById('f-name');
+        if (nameInput) nameInput.focus();
+      }, 600);
+    }
+
+    // Handle Project Scope Form Submission
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('f-name').value;
+      const shop = document.getElementById('f-shop').value;
+      const contact = document.getElementById('f-contact').value;
+      const sales = document.getElementById('f-sales').value || '₹1,00,000 / month';
+      const recovery = document.getElementById('f-savings-target').value || '+₹5,300 / mo';
+
+      // Generate a clean reference code
+      const randomRef = 'SP-' + Math.floor(10000 + Math.random() * 90000);
+      const refEl = document.getElementById('conf-ref-id');
+      if (refEl) refEl.textContent = randomRef;
+
+      document.getElementById('conf-owner').textContent = name;
+      document.getElementById('conf-shop').textContent = shop;
+      document.getElementById('conf-contact').textContent = contact;
+      document.getElementById('conf-sales').textContent = sales;
+      
+      const confRecovery = document.getElementById('conf-recovery');
+      if (confRecovery) confRecovery.textContent = recovery.split(' ')[0] + ' / mo';
+
+      const confBox = document.getElementById('form-confirmation');
+      confBox.classList.remove('hidden');
+      confBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      const btn = document.getElementById('f-btn');
+      btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Discovery Scope Submitted!';
+      btn.classList.remove('bg-emerald-500', 'hover:bg-emerald-400');
+      btn.classList.add('bg-slate-700', 'text-slate-300', 'cursor-not-allowed');
+      btn.disabled = true;
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateRahulStory();
+      updateCalculator();
+    });
+  </script>
+</body>
+</html>
